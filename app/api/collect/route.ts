@@ -2,33 +2,39 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 export async function GET() {
-  // 👇 컴퓨터가 현재 환경변수를 어떻게 읽고 있는지 터미널에 출력해 봅니다.
-  console.log("--- 🔎 주소 확인 시작 ---");
-  console.log("URL 주소:", process.env.NEXT_PUBLIC_SUPABASE_URL);
-  console.log("Secret 키:", process.env.SUPABASE_SERVICE_ROLE_KEY ? "잘 들어옴" : "안 들어옴(비어있음)");
-  console.log("-------------------------");
-
-  // URL이나 키가 비어있으면 멈춤
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json({ success: false, error: "환경변수가 설정되지 않았습니다. .env.local 파일을 확인하세요." }, { status: 500 });
-  }
-
-  // Supabase 연결
   const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // 테스트용 공고 데이터 3개
+  // 👇 나중에 여기에 워크넷/공공데이터 API의 대구경북 필터를 넣게 됩니다!
   const samplePosts = [
     {
-      title: '2026년 상반기 청년 인턴 채용',
-      organization: '한국산업인력공단',
+      title: '[대구] 2026년 하반기 공공기관 통합채용',
+      organization: '대구광역시',
       category: '채용',
-      deadline: '2026-11-15',
-      source_name: '고용24',
-      source_url: 'https://www.work24.go.kr',
-      external_id: 'test-101',
+      deadline: '2026-11-30', // 다가올 마감일
+      source_name: '대구시청',
+      source_url: 'https://www.daegu.go.kr',
+      external_id: 'dg-2026-001',
+    },
+    {
+      title: '[경북] 대학생 지역기업 탐방단 모집',
+      organization: '경상북도 경제진흥원',
+      category: '대외활동',
+      deadline: '2026-12-15', // 다가올 마감일
+      source_name: '경북테크노파크',
+      source_url: 'https://www.gbtp.or.kr',
+      external_id: 'gb-2026-002',
+    },
+    {
+      title: '[대구/경북] 이미 기간이 끝난 예전 공고 (보이면 안 됨!)',
+      organization: '테스트 기관',
+      category: '공모전',
+      deadline: '2026-01-01', // 👈 이미 지난 옛날 날짜!
+      source_name: '테스트 데이터',
+      source_url: '#',
+      external_id: 'test-old-001',
     }
   ];
 
@@ -40,5 +46,5 @@ export async function GET() {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ success: true, message: '성공!' });
+  return NextResponse.json({ success: true, message: '대구경북 데이터 수집 완료!' });
 }

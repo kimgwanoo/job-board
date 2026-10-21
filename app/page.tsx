@@ -1,29 +1,28 @@
 import { createClient } from '@supabase/supabase-js';
 import { Suspense } from 'react';
+import { cookies } from 'next/headers';
 
-// 1. 데이터를 가져와서 카드 목록을 그리는 핵심 컴포넌트
 async function PostList() {
+  await cookies();
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
+  // 👇 오늘 날짜 구하기 (예: 2026-10-22)
+  const today = new Date().toISOString().split('T')[0];
+
+  // 👇 핵심 로직: 마감일이 오늘(today)보다 크거나 같음(gte) OR 마감일이 없는(null) 공고만 가져오기
   const { data: posts } = await supabase
     .from('posts')
     .select('*')
+    .or(`deadline.gte.${today},deadline.is.null`)
     .order('deadline', { ascending: true });
 
   if (!posts || posts.length === 0) {
     return (
       <div className="bg-white p-8 rounded-xl shadow-sm text-center border">
-        <p className="text-gray-500 mb-4">아직 수집된 공고가 없습니다.</p>
-        <a
-          href="/api/collect"
-          target="_blank"
-          className="inline-block bg-blue-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-blue-700"
-        >
-          여기를 눌러 첫 데이터 수집하기
-        </a>
+        <p className="text-gray-500 mb-4">현재 모집 중인 대구·경북 공고가 없습니다.</p>
       </div>
     );
   }
@@ -57,23 +56,20 @@ async function PostList() {
   );
 }
 
-// 2. 메인 페이지 (뼈대)
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-gray-50 p-6 md:p-12">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          🚀 취업·공모전·대외활동 통합 보드
+        <h1 className="text-3xl font-bold text-blue-600 mb-2">
+          🚀 대구·경북 취업/대외활동 통합 보드
         </h1>
         <p className="text-gray-600 mb-8">
-          공식 API를 통해 매일 자동으로 업데이트되는 맞춤형 취업 정보입니다.
+          마감일이 지나지 않은 대구·경북 지역의 핵심 채용/공모전 정보만 모아 보여드립니다.
         </p>
 
-        {/* 👇 데이터가 오는 동안 "불러오는 중" 표시를 띄워주는 안전장치(Suspense)입니다 */}
         <Suspense fallback={<div className="text-center p-10 text-gray-500 font-medium">데이터를 불러오는 중입니다... ⏳</div>}>
           <PostList />
         </Suspense>
-
       </div>
     </main>
   );
