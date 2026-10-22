@@ -25,27 +25,27 @@ export async function GET() {
       return NextResponse.json({ success: true, message: '새로운 공고가 없습니다.' });
     }
 
-    // 💡 방금 화면에서 확인한 정확한 한글 이름표('제목', '순번')를 사용합니다!
     const formattedPosts = items.map((item: any) => ({
       title: item['제목'], 
       organization: '대구공공시설관리공단',
       category: '채용공고',
-      deadline: null, // API에서 마감일을 주지 않아 상시채용으로 처리
+      deadline: null, 
       source_name: '대구공공시설관리공단',
-      // API에 개별 링크가 없어서 공단의 공식 채용 게시판 주소로 연결합니다.
-      source_url: 'https://www.dpfc.or.kr/front/board/list.do?m_no=67', 
+      // 👇 방화벽이 없는 가장 안전한 '공식 채용 전용 사이트' 주소로 바꿨습니다.
+      source_url: 'https://dpfc.saramin.co.kr', 
       external_id: String(item['순번']),
     }));
 
+    // 👇 핵심!: 기존 DB에 있던 옛날 에러 주소를 새로운 주소로 '강제로 덮어쓰기' 하도록 규칙을 바꿨습니다.
     const { error } = await supabase
       .from('posts')
-      .upsert(formattedPosts, { onConflict: 'source_name,external_id', ignoreDuplicates: true });
+      .upsert(formattedPosts, { onConflict: 'source_name,external_id' }); // ignoreDuplicates 옵션 삭제!
       
     if (error) throw error;
 
     return NextResponse.json({ 
       success: true, 
-      message: `대구공공시설관리공단 공고 ${formattedPosts.length}개 수집 완료!` 
+      message: `대구공공시설관리공단 공고 ${formattedPosts.length}개 안전한 주소로 덮어쓰기 완료!` 
     });
 
   } catch (error: any) {
