@@ -1,28 +1,31 @@
 import { createClient } from '@supabase/supabase-js';
 import { Suspense } from 'react';
-import { cookies } from 'next/headers';
+import { connection } from 'next/server';
 
 async function PostList() {
-  await cookies();
+  await connection();
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  // 👇 오늘 날짜 구하기 (예: 2026-10-22)
-  const today = new Date().toISOString().split('T')[0];
-
-  // 👇 핵심 로직: 마감일이 오늘(today)보다 크거나 같음(gte) OR 마감일이 없는(null) 공고만 가져오기
+  // 👇 날짜 필터를 빼고 모든 공고를 최신순으로 가져오기
   const { data: posts } = await supabase
     .from('posts')
     .select('*')
-    .or(`deadline.gte.${today},deadline.is.null`)
-    .order('deadline', { ascending: true });
+    .order('created_at', { ascending: false });
 
   if (!posts || posts.length === 0) {
     return (
       <div className="bg-white p-8 rounded-xl shadow-sm text-center border">
-        <p className="text-gray-500 mb-4">현재 모집 중인 대구·경북 공고가 없습니다.</p>
+        <p className="text-gray-500 mb-4">아직 수집된 공고가 없습니다.</p>
+        <a
+          href="/api/collect"
+          target="_blank"
+          className="inline-block bg-blue-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-blue-700"
+        >
+          데이터 수집하기
+        </a>
       </div>
     );
   }
@@ -41,8 +44,8 @@ async function PostList() {
             <span className="inline-block px-3 py-1 text-xs font-semibold text-blue-700 bg-blue-50 rounded-full">
               {post.category}
             </span>
-            <span className="text-sm font-medium text-red-500">
-              마감일: {post.deadline || '상시채용'}
+            <span className="text-sm font-medium text-gray-500">
+              등록/마감: {post.deadline || '상시채용'}
             </span>
           </div>
           <h2 className="text-xl font-bold text-gray-800 mb-1">{post.title}</h2>
@@ -64,7 +67,7 @@ export default function HomePage() {
           🚀 대구·경북 취업/대외활동 통합 보드
         </h1>
         <p className="text-gray-600 mb-8">
-          마감일이 지나지 않은 대구·경북 지역의 핵심 채용/공모전 정보만 모아 보여드립니다.
+          대구광역시청 공식 RSS에서 수집한 실시간 공고 목록입니다.
         </p>
 
         <Suspense fallback={<div className="text-center p-10 text-gray-500 font-medium">데이터를 불러오는 중입니다... ⏳</div>}>
